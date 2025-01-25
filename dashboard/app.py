@@ -5,32 +5,25 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 import os
 
-# Konfigurasi path absolut sesuai lokasi file Anda
-DATA_PATH = r"C:\tomy\Etha\Analisa_kualitas_udara\dashboard\cleaned_air_quality_data.csv"
-
-# Konfigurasi halaman
-st.set_page_config(
-    page_title="Analisis Kualitas Udara",
-    page_icon="🌫️",
-    layout="wide"
-)
-
-@st.cache_data
+# ========== PERBAIKAN PATH ==========
 def load_data():
     try:
-        # Cek eksistensi file
-        if not Path(DATA_PATH).exists():
-            st.error(f"❌ File tidak ditemukan di lokasi:\n{DATA_PATH}")
+        # Gunakan path relatif ke lokasi file app.py
+        current_dir = Path(__file__).parent
+        data_path = current_dir / "cleaned_air_quality_data.csv"
+        
+        if not data_path.exists():
+            st.error(f"❌ File tidak ditemukan di: {data_path}")
             st.error("Pastikan:")
             st.markdown("""
-            1. Nama file tepat: `cleaned_air_quality_data.csv`
-            2. Path folder benar: `C:\\tomy\\Etha\\Analisa_kualitas_udara\\dashboard\\`
-            3. File tidak sedang terbuka di program lain
+            1. File berada di folder yang sama dengan app.py
+            2. Nama file tepat: `cleaned_air_quality_data.csv`
+            3. Ukuran file tidak melebihi 100MB
             """)
             return None
             
         # Load data
-        df = pd.read_csv(DATA_PATH)
+        df = pd.read_csv(data_path)
         
         # Validasi kolom
         required_columns = ['No','year','month','day','hour','PM2.5','PM10','SO2','NO2','CO','O3','TEMP','PRES','DEWP','RAIN','wd','WSPM','station']
@@ -44,7 +37,8 @@ def load_data():
             df['year'].astype(str) + '-' +
             df['month'].astype(str) + '-' +
             df['day'].astype(str) + ' ' +
-            df['hour'].astype(str) + ':00:00'
+            df['hour'].astype(str) + ':00:00',
+            errors='coerce'
         )
         
         # Konversi tipe data numerik
@@ -58,11 +52,14 @@ def load_data():
         return None
 
 def main():
-    st.title("🌍 Dashboard Kualitas Udara 12 Titik Pemantauan (2013-2017)")
+    # Konfigurasi halaman
+    st.set_page_config(
+        page_title="Analisis Kualitas Udara",
+        page_icon="🌫️",
+        layout="wide"
+    )
     
-    # Debugging info
-    st.sidebar.markdown(f"**Path file data:** `{DATA_PATH}`")
-    st.sidebar.markdown(f"**Status file:** {'✅ Ditemukan' if Path(DATA_PATH).exists() else '❌ Tidak Ditemukan'}")
+    st.title("🌍 Dashboard Kualitas Udara 12 Titik Pemantauan (2013-2017)")
     
     # Load data
     with st.spinner('Memuat data...'):
@@ -102,7 +99,7 @@ def main():
     with col6:
         st.metric("Rata-rata NO2 Maksimal", f"{filtered_df['NO2'].mean():.1f} µg/m³")
 
-        # ===== Analisis Temporal =====
+    # ===== Analisis Temporal =====
     st.header("Analisis Temporal")
     
     # Pilih polutan
@@ -154,8 +151,6 @@ def main():
         
     except Exception as e:
         st.error(f"Gagal membuat grafik: {str(e)}")
-
-# ... [Kode setelahnya tetap sama]
 
 if __name__ == "__main__":
     main()
